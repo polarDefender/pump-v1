@@ -53,3 +53,9 @@ export type Ticker = {
 export interface Tickers {
   data: Ticker[]
 }
+
+export interface RootState {
+  tickers: {
+    tickers: Tickers
+  }
+}

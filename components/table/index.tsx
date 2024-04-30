@@ -17,50 +17,63 @@ import {
   Chip,
   Pagination,
 } from "@nextui-org/react";
-import * as Types from "@/types/runesInfoList";
+import { useSelector, useDispatch } from "react-redux";
+import * as Types from "@/types";
+import { TableTicker } from "@/types/runesTable";
+
 import { SearchIcon, ChevronDownIcon } from "./icons";
-import { columns, InfoLists, statusOptions } from "./data";
-import { capitalize } from "./utils";
+import { columns, statusOptions } from "./data";
+import { capitalize, fillterTickers } from "./utils";
 
 const statusColorMap = {
   active: "FIXED SUPPLY",
   paused: "FAIR LAUNCH",
 };
 
-export default function Table(dataSets: any) {
+export default function Table() {
+  const tickersData = useSelector(
+    (state: Types.RootState) => state.tickers.tickers.data
+  );
+
   const [filterValue, setFilterValue] = React.useState("");
-  const [selectedKeys, setSelectedKeys] = React.useState(new Set(["all"]));
-  const [statusFilter, setStatusFilter] = React.useState("all");
+  const [statusFilter, setStatusFilter] = React.useState("");
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState({
     column: "Token",
     direction: "ascending",
   });
+  const [tickers, setTickers] = React.useState<TableTicker[]>([]);
   const [page, setPage] = React.useState(1);
 
   const hasSearchFilter = Boolean(filterValue);
 
   const headerColumns = columns;
 
+  React.useEffect(() => {
+    if (!tickersData) return;
+    console.log(typeof tickersData, "test");
+    const tickers = fillterTickers(tickersData);
+    setTickers([...tickers]);
+    console.log(tickers);
+  }, [tickersData]);
+
   const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...InfoLists];
+    let filteredUsers = [...tickers];
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((user) =>
         user.volume.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
-    if (
-      statusFilter !== "all" &&
-      Array.from(statusFilter).length !== statusOptions.length
-    ) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(user.mints)
-      );
-    }
+
+    // if (statusFilter !== "" && statusFilter.size !== 0) {
+    //   filteredUsers = filteredUsers.filter((user) =>
+    //     Array.from(statusFilter).includes(user.mints)
+    //   );
+    // }
 
     return filteredUsers;
-  }, [InfoLists, filterValue, statusFilter]);
+  }, [tickers, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -86,10 +99,10 @@ export default function Table(dataSets: any) {
     switch (columnKey) {
       case "token":
         return cellValue;
-      case "role":
+      case "mints":
         return (
           <div className="flex flex-col">
-            <p className="text-bold text-small capitalize">{cellValue}</p>
+            <p className="text-bold text-small capitalize">test</p>
             <p className="text-bold text-tiny capitalize text-default-400">
               {user.team}
             </p>
@@ -167,7 +180,6 @@ export default function Table(dataSets: any) {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
-                disallowEmptySelection
                 aria-label="Table Columns"
                 closeOnSelect={false}
                 selectedKeys={statusFilter}
@@ -185,7 +197,7 @@ export default function Table(dataSets: any) {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {InfoLists.length} data
+            Total {tickers.length} data
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -205,7 +217,7 @@ export default function Table(dataSets: any) {
     filterValue,
     statusFilter,
     onRowsPerPageChange,
-    InfoLists.length,
+    tickers.length,
     onSearchChange,
     hasSearchFilter,
   ]);
@@ -242,7 +254,7 @@ export default function Table(dataSets: any) {
         </div>
       </div>
     );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
+  }, [items.length, page, pages, hasSearchFilter]);
 
   return (
     <NextUITable

@@ -8,15 +8,15 @@ import React, { useEffect, useState } from "react";
 import Table from "@/components/table";
 
 export default function Runes() {
-  const counter = useSelector((state) => state);
-  const dispatch = useDispatch();
+  // const counter = useSelector((state) => state);
+
+  // const dispatch = useDispatch();
   useEffect(() => {
     const fetchData = async () => {
       const infoLists = await getInfoList();
-      const tickers = await getTickers();
+      // const tickers = await getTickers();
       // setData(tickers);
       // dispatch()
-      console.log(tickers, "test");
     };
     fetchData();
   }, []);

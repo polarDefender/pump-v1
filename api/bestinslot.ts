@@ -13,7 +13,7 @@ export const getTickers = async () => {
     };
 
     const response = await axios.get(`${NEXT_PUBLIC_BIS_GET_TICKERS_URL}`, {
-      params,
+      params, 
       headers: {
         'x-api-key': NEXT_PUBLIC_BIS_API_KEY,
         'Content-Type': 'application/json',
