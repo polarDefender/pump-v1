@@ -17,8 +17,9 @@ import {
   Chip,
   Pagination,
 } from "@nextui-org/react";
+import * as Types from "@/types/runesInfoList";
 import { SearchIcon, ChevronDownIcon } from "./icons";
-import { columns, users, statusOptions } from "./data";
+import { columns, InfoLists, statusOptions } from "./data";
 import { capitalize } from "./utils";
 
 const statusColorMap = {
@@ -26,47 +27,27 @@ const statusColorMap = {
   paused: "FAIR LAUNCH",
 };
 
-const INITIAL_VISIBLE_COLUMNS: string[] = [
-  "ticker",
-  "umber",
-  "launch",
-  "time",
-  "mint",
-  "mints",
-  "circulating",
-  "holders",
-];
-
 export default function Table(dataSets: any) {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState(new Set(["all"]));
-  const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "TICKER",
+    column: "Token",
     direction: "ascending",
   });
   const [page, setPage] = React.useState(1);
 
   const hasSearchFilter = Boolean(filterValue);
 
-  const headerColumns = React.useMemo(() => {
-    if (visibleColumns.has("all")) return columns;
-
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
-    );
-  }, [visibleColumns]);
+  const headerColumns = columns;
 
   const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...users];
+    let filteredUsers = [...InfoLists];
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((user) =>
-        user.launch.toLowerCase().includes(filterValue.toLowerCase())
+        user.volume.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
     if (
@@ -74,12 +55,12 @@ export default function Table(dataSets: any) {
       Array.from(statusFilter).length !== statusOptions.length
     ) {
       filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(user.mint)
+        Array.from(statusFilter).includes(user.mints)
       );
     }
 
     return filteredUsers;
-  }, [users, filterValue, statusFilter]);
+  }, [InfoLists, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -103,7 +84,7 @@ export default function Table(dataSets: any) {
   const renderCell = React.useCallback((user: any, columnKey: string) => {
     const cellValue = user[columnKey];
     switch (columnKey) {
-      case "ticker":
+      case "token":
         return cellValue;
       case "role":
         return (
@@ -118,7 +99,7 @@ export default function Table(dataSets: any) {
         return (
           <Chip
             className="capitalize"
-            // color={statusColorMap[user.status as keyof typeof statusColorMap]}
+            color={statusColorMap[user.status as keyof typeof statusColorMap]}
             size="sm"
             variant="flat"
           >
@@ -128,6 +109,7 @@ export default function Table(dataSets: any) {
       default:
         return cellValue;
     }
+    return cellValue;
   }, []);
 
   const onNextPage = React.useCallback(() => {
@@ -167,8 +149,8 @@ export default function Table(dataSets: any) {
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
-            className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            className="w-full sm:max-w-[30%]"
+            placeholder="Search..."
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => onClear()}
@@ -181,7 +163,7 @@ export default function Table(dataSets: any) {
                   endContent={<ChevronDownIcon className="text-small" />}
                   variant="flat"
                 >
-                  Status
+                  Filter
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
@@ -199,35 +181,11 @@ export default function Table(dataSets: any) {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  variant="flat"
-                >
-                  Columns
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
           </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {users.length} users
+            Total {InfoLists.length} data
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -246,9 +204,8 @@ export default function Table(dataSets: any) {
   }, [
     filterValue,
     statusFilter,
-    visibleColumns,
     onRowsPerPageChange,
-    users.length,
+    InfoLists.length,
     onSearchChange,
     hasSearchFilter,
   ]);
@@ -256,11 +213,6 @@ export default function Table(dataSets: any) {
   const bottomContent = React.useMemo(() => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
-        <span className="w-[30%] text-small text-default-400">
-          {selectedKeys.has("all")
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`}
-        </span>
         <Pagination
           isCompact
           showControls
@@ -270,7 +222,7 @@ export default function Table(dataSets: any) {
           total={pages}
           onChange={setPage}
         />
-        <div className="hidden sm:flex w-[30%] justify-end gap-2">
+        <div className="hidden sm:flex w-[50%] justify-end gap-2">
           <Button
             isDisabled={pages === 1}
             size="sm"
@@ -296,7 +248,7 @@ export default function Table(dataSets: any) {
     <NextUITable
       aria-label="Example table with custom cells, pagination and sorting"
       isHeaderSticky
-      // bottomContent={bottomContent}
+      bottomContent={bottomContent}
       bottomContentPlacement="outside"
       classNames={{
         wrapper: "max-h-[382px]",
