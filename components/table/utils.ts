@@ -11,7 +11,7 @@ export function fillterTickers(data: Types.Ticker[]) {
     const ticker: TableTicker = {
       token:`${item.symbol} ${item.spaced_rune_name}`,
       price: `${item.avg_unit_price_in_sats} sat`,
-      symbol: 300,
+      symbol: item.rune_number,
       mints: {
         mint_cnt_limit: item.mint_cnt_limit,
         mint_end_block: item.mint_end_block,

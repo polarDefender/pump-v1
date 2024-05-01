@@ -1,7 +1,7 @@
 export type TableTicker = { 
     token: string
     price: string
-    symbol: number
+    symbol: string
     mints: Mints
     volume: string
     volume24h: string

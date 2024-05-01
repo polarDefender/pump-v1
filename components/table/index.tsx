@@ -51,10 +51,9 @@ export default function Table() {
 
   React.useEffect(() => {
     if (!tickersData) return;
-    console.log(typeof tickersData, "test");
     const tickers = fillterTickers(tickersData);
+    console.log(tickersData);
     setTickers([...tickers]);
-    console.log(tickers);
   }, [tickersData]);
 
   const filteredItems = React.useMemo(() => {
@@ -66,11 +65,11 @@ export default function Table() {
       );
     }
 
-    // if (statusFilter !== "" && statusFilter.size !== 0) {
-    //   filteredUsers = filteredUsers.filter((user) =>
-    //     Array.from(statusFilter).includes(user.mints)
-    //   );
-    // }
+    if (statusFilter !== "" && statusFilter.size !== 0) {
+      filteredUsers = filteredUsers.filter((user) =>
+        Array.from(statusFilter).includes(user.volume)
+      );
+    }
 
     return filteredUsers;
   }, [tickers, filterValue, statusFilter]);
@@ -122,7 +121,6 @@ export default function Table() {
       default:
         return cellValue;
     }
-    return cellValue;
   }, []);
 
   const onNextPage = React.useCallback(() => {

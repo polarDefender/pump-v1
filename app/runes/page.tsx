@@ -17,6 +17,7 @@ export default function Runes() {
       // const tickers = await getTickers();
       // setData(tickers);
       // dispatch()
+      console.log(infoLists);
     };
     fetchData();
   }, []);
