@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Provider } from "react-redux";
 import store from "@/state/store";
+import Background from "./background";
 import { NextUIProvider } from "@nextui-org/system";
 
 import { useRouter } from "next/navigation";
@@ -20,6 +21,7 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   return (
     <NextUIProvider navigate={router.push}>
       <Provider store={store}>
+        <Background />
         <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
       </Provider>
     </NextUIProvider>

@@ -12,9 +12,14 @@ export type TableTicker = {
 };
 
 export type Mints = {
-    mint_cnt_limit: string
-    mint_end_block: null | string
+    block_range: string
+    supply: string
     mint_progress: number
-    mint_start_block: null | string
+    mint_amount: string
+    num_mint: string
+    premine: string
+    max_supply: string
+    remaining_supply: string
+    cap: string
     mintable: boolean   
 }
