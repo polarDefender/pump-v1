@@ -52,7 +52,7 @@ export default function Table() {
   React.useEffect(() => {
     if (!tickersData) return;
     const tickers = fillterTickers(tickersData);
-    console.log(tickersData);
+    // console.log(tickersData);
     setTickers([...tickers]);
   }, [tickersData]);
 
