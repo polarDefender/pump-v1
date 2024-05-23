@@ -52,10 +52,13 @@ export type Ticker = {
 
 export interface Tickers {
   data: Ticker[]
+  block_height: number
 }
 
-export interface RootState {
-  tickers: {
-    tickers: Tickers
-  }
+export interface TickersReducer {
+  tickers: Tickers
+}
+
+export interface BtcPriceInUSD {
+  usd: number
 }

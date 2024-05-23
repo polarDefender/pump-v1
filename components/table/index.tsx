@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { FC, useState, useEffect, useCallback, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
   Table as NextUITable,
+  SortDescriptor,
   TableHeader,
   TableColumn,
   TableBody,
@@ -16,58 +18,72 @@ import {
   DropdownItem,
   Chip,
   Pagination,
+  Tooltip,
+  Slider,
 } from "@nextui-org/react";
-import { useSelector, useDispatch } from "react-redux";
-import * as Types from "@/types";
 import { TableTicker } from "@/types/runesTable";
+import { Ticker, Tickers, TickersReducer, BtcPriceInUSD } from "@/types";
 
 import { SearchIcon, ChevronDownIcon } from "./icons";
 import { columns, statusOptions } from "./data";
-import { capitalize, fillterTickers } from "./utils";
+import {
+  capitalize,
+  fillterTickers,
+  formatFloat,
+  convertSatToBTC,
+  formatNumberShort,
+  convertSatToUSD,
+} from "./utils";
 
-const statusColorMap = {
-  active: "FIXED SUPPLY",
-  paused: "FAIR LAUNCH",
+const statusColorMap: Record<
+  string,
+  "default" | "primary" | "secondary" | "success" | "warning" | "danger"
+> = {
+  active: "success",
+  inactive: "danger",
+  // add more mappings as needed
 };
 
-export default function Table() {
-  const tickersData = useSelector(
-    (state: Types.RootState) => state.tickers.tickers.data
+interface RootState {
+  tickers: TickersReducer;
+  btcPriceInUSD: BtcPriceInUSD;
+}
+
+export const Table = () => {
+  const rootTickers: Ticker[] = useSelector(
+    (state: RootState) => state.tickers?.tickers?.data
   );
 
-  const [filterValue, setFilterValue] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState("");
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [sortDescriptor, setSortDescriptor] = React.useState({
+  const btcPriceInUSD = useSelector(
+    (state: RootState) => state.btcPriceInUSD.usd
+  );
+
+  const [filterValue, setFilterValue] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "Token",
     direction: "ascending",
   });
-  const [tickers, setTickers] = React.useState<TableTicker[]>([]);
-  const [page, setPage] = React.useState(1);
+  const [tickers, setTickers] = useState<TableTicker[]>([]);
+  const [page, setPage] = useState(1);
 
   const hasSearchFilter = Boolean(filterValue);
 
   const headerColumns = columns;
 
-  React.useEffect(() => {
-    if (!tickersData) return;
-    const tickers = fillterTickers(tickersData);
-    // console.log(tickersData);
+  useEffect(() => {
+    if (!rootTickers) return;
+    const tickers = fillterTickers(rootTickers);
     setTickers([...tickers]);
-  }, [tickersData]);
+  }, [rootTickers]);
 
-  const filteredItems = React.useMemo(() => {
+  const filteredItems = useMemo(() => {
     let filteredUsers = [...tickers];
 
     if (hasSearchFilter) {
       filteredUsers = filteredUsers.filter((user) =>
-        user.volume.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "" && statusFilter.size !== 0) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(user.volume)
+        user.token.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -76,14 +92,14 @@ export default function Table() {
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
-  const items = React.useMemo(() => {
+  const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
 
     return filteredItems.slice(start, end);
   }, [page, filteredItems, rowsPerPage]);
 
-  const sortedItems = React.useMemo(() => {
+  const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
       const first = a[sortDescriptor.column as keyof typeof a];
       const second = b[sortDescriptor.column as keyof typeof b];
@@ -93,54 +109,122 @@ export default function Table() {
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((user: any, columnKey: string) => {
+  const renderCell = useCallback((user: TableTicker, columnKey: string) => {
     const cellValue = user[columnKey];
+
+    const usdPice: number =
+      Number(convertSatToUSD(Number(cellValue), btcPriceInUSD)) || 0;
     switch (columnKey) {
-      case "token":
-        return cellValue;
+      case "volume":
+        return `$${formatNumberShort(Number(usdPice))}`;
+      case "volume24h":
+        return `$${formatNumberShort(Number(usdPice))}`;
+      case "volume7D":
+        return `$${formatNumberShort(Number(usdPice))}`;
+      case "price":
+        const displayPrice: string =
+          Number(cellValue) < 10000
+            ? `${formatFloat(Number(cellValue), 5)} sat`
+            : `${formatFloat(Number(cellValue), 5)} BTC`;
+        return displayPrice;
       case "mints":
         return (
-          <div className="flex flex-col">
-            <p className="text-bold text-small capitalize">test</p>
-            <p className="text-bold text-tiny capitalize text-default-400">
-              {user.team}
-            </p>
-          </div>
-        );
-      case "launch":
-        return (
-          <Chip
-            className="capitalize"
-            color={statusColorMap[user.status as keyof typeof statusColorMap]}
-            size="sm"
-            variant="flat"
+          <Tooltip
+            content={
+              <div className="px-2 py-2 w-[300px] flex flex-col gap-1">
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Block Range: </div>
+                  <div>{`${cellValue.mint_start_block || ""} - ${
+                    cellValue.mint_end_block || ""
+                  }`}</div>
+                </div>
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Supply </div>
+                  <div>{cellValue.supply}</div>
+                </div>
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Mint Amount </div>
+                  <div>{cellValue.mint_amount}</div>
+                </div>
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Num Mints </div>
+                  <div>{cellValue.num_mint}</div>
+                </div>
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Premine </div>
+                  <div>{cellValue.premine}</div>
+                </div>
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Max Supply </div>
+                  <div>{cellValue.max_supply}</div>
+                </div>
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Remaining Supply </div>
+                  <div>{cellValue.remaining_supply}</div>
+                </div>
+                <div className="text-medium flex justify-between">
+                  <div className="font-bold ">Cap </div>
+                  <div>{cellValue.mint_cnt_limit}</div>
+                </div>
+              </div>
+            }
           >
-            {cellValue}
-          </Chip>
+            <div className="flex w-[200px] flex-col gap-2 h-full max-w-md items-start justify-center">
+              <p className="text-default-500 w-full flex justify-between font-medium text-small">
+                <span>{cellValue.num_mint}</span>
+                <span>{formatFloat(cellValue.mint_progress, 2)}%</span>
+              </p>
+              <Slider
+                step={10}
+                maxValue={100}
+                minValue={0}
+                aria-label="Player progress"
+                value={formatFloat(cellValue.mint_progress, 2)}
+                hideThumb={true}
+                renderThumb={({ index, ...props }) => (
+                  <div
+                    {...props}
+                    className="top-1/2 bg-primary rounded-full hidden"
+                  >
+                    <span
+                      className={
+                        "bg-primary shadow-small w-6 h-3 rounded-full block"
+                      }
+                    />
+                  </div>
+                )}
+              />
+            </div>
+          </Tooltip>
         );
+      case "marketcap":
+        return `$${formatNumberShort(Number(usdPice))}`;
       default:
         return cellValue;
     }
   }, []);
 
-  const onNextPage = React.useCallback(() => {
+  const onNextPage = useCallback(() => {
     if (page < pages) {
       setPage(page + 1);
     }
   }, [page, pages]);
 
-  const onPreviousPage = React.useCallback(() => {
+  const onPreviousPage = useCallback(() => {
     if (page > 1) {
       setPage(page - 1);
     }
   }, [page]);
 
-  const onRowsPerPageChange = React.useCallback((e: any) => {
-    setRowsPerPage(Number(e.target.value));
-    setPage(1);
-  }, []);
+  const onRowsPerPageChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setRowsPerPage(Number(e.target.value));
+      setPage(1);
+    },
+    []
+  );
 
-  const onSearchChange = React.useCallback((value: any) => {
+  const onSearchChange = useCallback((value: string) => {
     if (value) {
       setFilterValue(value);
       setPage(1);
@@ -149,12 +233,16 @@ export default function Table() {
     }
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const handleSelectionChange = () => {
+    setStatusFilter(["default"]);
+  };
+
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-8">
         <div className="flex justify-between gap-3 items-end">
@@ -182,7 +270,7 @@ export default function Table() {
                 closeOnSelect={false}
                 selectedKeys={statusFilter}
                 selectionMode="multiple"
-                onSelectionChange={setStatusFilter}
+                onSelectionChange={handleSelectionChange}
               >
                 {statusOptions.map((status) => (
                   <DropdownItem key={status.uid} className="capitalize">
@@ -220,7 +308,7 @@ export default function Table() {
     hasSearchFilter,
   ]);
 
-  const bottomContent = React.useMemo(() => {
+  const bottomContent = useMemo(() => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <Pagination
@@ -281,14 +369,18 @@ export default function Table() {
         ))}
       </TableHeader>
       <TableBody>
-        {sortedItems.map((user: any, index) => (
+        {sortedItems.map((ticker: TableTicker, index: number) => (
           <TableRow key={index}>
             {headerColumns.map((column, index) => (
-              <TableCell key={index}>{renderCell(user, column.uid)}</TableCell>
+              <TableCell key={index}>
+                {renderCell(ticker, column.uid)}
+              </TableCell>
             ))}
           </TableRow>
         ))}
       </TableBody>
     </NextUITable>
   );
-}
+};
+
+export default Table;

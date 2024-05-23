@@ -1,11 +1,13 @@
 // src/state/store.ts
 
 import { configureStore } from '@reduxjs/toolkit';
-import tikcersReducer from './slices/tickersSlice';
+import tickersReducer from './slices/tickersSlice';
+import btcPriceReducer from './slices/btcPriceSlice'
 
 const store = configureStore({
   reducer: {
-    tickers: tikcersReducer,
+    tickers: tickersReducer,
+    btcPriceInUSD: btcPriceReducer
   },
 });
 
